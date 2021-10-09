@@ -1,0 +1,20 @@
+{
+    "title": "OpenWrt",
+    "config": {
+      "step": {
+        "user": {
+          "title": "New OpenWrt device",
+          "data": {
+            "id": "Device name (unique)",
+            "address": "Hostname or IP address",
+            "username": "Username with access to the Ubus",
+            "password": "Password",
+            "https": "Use HTTPS",
+            "port": "Custom port ('0' to use default one)",
+            "path": "Ubus endpoint URI path"
+          }
+        }
+      }
+    }
+  }
+  

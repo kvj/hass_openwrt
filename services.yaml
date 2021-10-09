@@ -1,0 +1,5 @@
+reboot:
+  name: Reboot OpenWrt device
+  target:
+    device:
+      integration: openwrt
