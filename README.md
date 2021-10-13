@@ -85,3 +85,9 @@ In order to allow ubus/rpcd execute a command remotely, the command should be ad
   }
 }
 ```
+
+### Screenshots:
+
+<img width="1050" alt="Screenshot 2021-10-11 at 14 07 34" src="https://user-images.githubusercontent.com/159124/136787603-04d3f48f-5726-45ab-94f1-c3c3b8b39c53.png">
+
+<img width="554" alt="Screenshot 2021-10-11 at 14 08 15" src="https://user-images.githubusercontent.com/159124/136787627-01e527a7-cf7f-4527-8330-8aa68f22d13e.png">
