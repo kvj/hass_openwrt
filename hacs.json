@@ -1,0 +1,5 @@
+{
+    "name": "OpenWrt",
+    "domains": ["sensor"],
+    "render_readme": true
+}
