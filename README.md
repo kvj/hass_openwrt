@@ -11,7 +11,8 @@
 * Binary sensors:
   * `mwan3` connectivity status
 * Services:
-  * Reboot device
+  * Reboot device: `openwrt.reboot`
+  * Execute arbitrary command: `openwrt.exec` (see the configuration below) 
 
 ### Installing
 * OpeWrt device(s):
@@ -64,3 +65,23 @@ config login
         list write hass
 ```
 * Restart rpcd: `/etc/init.d/rpcd restart`
+
+### Executing command
+
+In order to allow ubus/rpcd execute a command remotely, the command should be added to the permissions ACL file above. The extra configuration could look like below (gives permission to execute `uptime` command):
+```json
+{
+  "hass": {
+    "write": {
+      "ubus": {
+        /* ... */
+        "file": ["exec"]
+      },
+      "file": {
+        /* ... */
+        "/usr/bin/uptime": ["exec"]
+      }
+    },
+  }
+}
+```

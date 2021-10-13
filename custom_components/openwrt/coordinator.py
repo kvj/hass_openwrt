@@ -12,8 +12,8 @@ from datetime import timedelta
 
 _LOGGER = logging.getLogger(__name__)
 
-class DeviceCoordinator:
 
+class DeviceCoordinator:
 
     def __init__(self, hass, config: dict, ubus: Ubus, all_devices: dict):
         self._config = config
@@ -21,7 +21,7 @@ class DeviceCoordinator:
         self._all_devices = all_devices
         self._id = config["id"]
         self._apis = None
-        
+
         self._coordinator = DataUpdateCoordinator(
             hass,
             _LOGGER,
@@ -42,14 +42,16 @@ class DeviceCoordinator:
             response = await self._ubus.api_call('network.wireless', 'status', {})
             for radio, item in response.items():
                 for iface in item['interfaces']:
-                    conf = dict(ifname=iface['ifname'], network=iface['config']['network'][0])
+                    conf = dict(ifname=iface['ifname'],
+                                network=iface['config']['network'][0])
                     if iface['config']['mode'] == 'ap':
                         result['ap'].append(conf)
                     if iface['config']['mode'] == 'mesh':
                         conf['mesh_id'] = iface['config']['mesh_id']
                         result['mesh'].append(conf)
         except NameError as err:
-            _LOGGER.warning(f"Device [{self._id}] doesn't support wireless: {err}")
+            _LOGGER.warning(
+                f"Device [{self._id}] doesn't support wireless: {err}")
         return result
 
     def find_mesh_peers(self, mesh_id: str):
@@ -90,47 +92,59 @@ class DeviceCoordinator:
                         )
                         peers[mac] = dict(
                             active=assoc.get("mesh plink") == "ESTAB",
-                            signal=assoc.get("signal", -100), 
+                            signal=assoc.get("signal", -100),
                             noise=assoc.get("noise", 0)
                         )
                     except ConnectionError:
                         pass
         except ConnectionError as err:
-            _LOGGER.warning(f"Device [{self._id}] doesn't support iwinfo: {err}")
+            _LOGGER.warning(
+                f"Device [{self._id}] doesn't support iwinfo: {err}")
         return result
 
     async def update_hostapd_clients(self, interface_id: str) -> dict:
         response = await self._ubus.api_call(
-            f"hostapd.{interface_id}", 
-            'get_clients', 
+            f"hostapd.{interface_id}",
+            'get_clients',
             dict()
         )
         macs = list(map(lambda x: x.lower(), response['clients'].keys()))
         response = await self._ubus.api_call(
-            f"hostapd.{interface_id}", 
-            'wps_status', 
+            f"hostapd.{interface_id}",
+            'wps_status',
             dict()
         )
         return dict(
-            clients=len(macs), 
-            macs=macs, 
+            clients=len(macs),
+            macs=macs,
             wps=response["pbc_status"] == "Active"
         )
 
     async def set_wps(self, interface_id: str, enable: bool):
         await self._ubus.api_call(
             f"hostapd.{interface_id}",
-            "wps_start" if enable else "wps_cancel", 
+            "wps_start" if enable else "wps_cancel",
             dict()
         )
         await self.coordinator.async_request_refresh()
 
     async def do_reboot(self):
+        _LOGGER.debug(f"Rebooting device: {self._id}")
         await self._ubus.api_call(
             "system",
             "reboot",
             dict()
         )
+
+    async def do_file_exec(self, command: str, params, env: dict):
+        _LOGGER.debug(
+            f"Executing command: {self._id}: {command} with {params} env={env}")
+        result = await self._ubus.api_call(
+            "file",
+            "exec",
+            dict(command=command, params=params, env=env)
+        )
+        _LOGGER.debug(f"Execute result: {self._id}: {result}")
 
     async def update_ap(self, configs) -> dict:
         result = dict()
@@ -155,7 +169,7 @@ class DeviceCoordinator:
             return dict()
         result = dict()
         response = await self._ubus.api_call(
-            "mwan3", 
+            "mwan3",
             "status",
             dict(section="interfaces")
         )
@@ -171,7 +185,7 @@ class DeviceCoordinator:
                 "up": iface.get("up")
             }
         return result
-    
+
     async def load_ubus(self):
         return await self._ubus.api_call("*", None, None, "list")
 
@@ -196,9 +210,11 @@ class DeviceCoordinator:
             except PermissionError as err:
                 raise ConfigEntryAuthFailed from err
             except Exception as err:
-                _LOGGER.exception(f"Device [{self._id}] async_update_data error: {err}")
+                _LOGGER.exception(
+                    f"Device [{self._id}] async_update_data error: {err}")
                 raise UpdateFailed(f"OpenWrt communication error: {err}")
         return async_update_data
+
 
 def new_coordinator(hass, config: dict, all_devices: dict) -> DeviceCoordinator:
     _LOGGER.debug(f"new_coordinator: {config}")
@@ -206,9 +222,9 @@ def new_coordinator(hass, config: dict, all_devices: dict) -> DeviceCoordinator:
     port = ":%d" % (config["port"]) if config["port"] > 0 else ''
     url = "%s://%s%s%s" % (schema, config["address"], port, config["path"])
     connection = Ubus(
-        hass.async_add_executor_job, 
+        hass.async_add_executor_job,
         url,
-        config["username"], 
+        config["username"],
         config.get("password", "")
     )
     device = DeviceCoordinator(hass, config, connection, all_devices)

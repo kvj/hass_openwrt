@@ -1,9 +1,9 @@
 from __future__ import annotations
+from .constants import DOMAIN, PLATFORMS
 
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.helpers import device_registry
+from homeassistant.helpers import service
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
 )
@@ -16,12 +16,12 @@ from .coordinator import new_coordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-from .constants import DOMAIN, PLATFORMS
 
 CONFIG_SCHEMA = vol.Schema({
     DOMAIN: vol.Schema({
     }),
 }, extra=vol.ALLOW_EXTRA)
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     data = entry.as_dict()['data']
@@ -36,39 +36,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
     return True
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     for p in PLATFORMS:
         await hass.config_entries.async_forward_entry_unload(entry, p)
     hass.data[DOMAIN]['devices'].pop(entry.entry_id)
     return True
 
-async def async_reboot_device(hass: HomeAssistant, devices: dict, device_id: str):
-    registry = device_registry.async_get(hass)
-    device_entry = registry.async_get(device_id)
-    if not device_entry:
-        raise HomeAssistantError(f"Device {device_id} not found")
-    for entry in device_entry.config_entries:
-        device = devices.get(entry)
-        if device:
-            await device.do_reboot()
-            _LOGGER.info(f"Reboot successful: {entry}")
-            return True
-    raise HomeAssistantError(f"OpenWrt device wasn't found: {device_id}")
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.data[DOMAIN] = dict(devices={})
 
     async def async_reboot(call):
-        _LOGGER.debug(f"async_reboot: {call.data}")
-        if "device_id" not in call.data:
-            raise HomeAssistantError("Device (device_id) is expected")
-        for device_id in call.data["device_id"]:
-            await async_reboot_device(hass, hass.data[DOMAIN]["devices"], device_id)
-        return True
+        for entry_id in await service.async_extract_config_entry_ids(hass, call):
+            await hass.data[DOMAIN]["devices"][entry_id].do_reboot()
+
+    async def async_exec(call):
+        parts = call.data["command"].split(" ")
+        for entry_id in await service.async_extract_config_entry_ids(hass, call):
+            device = hass.data[DOMAIN]["devices"][entry_id]
+            if device.is_api_supported("file"):
+                await device.do_file_exec(
+                    parts[0],
+                    parts[1:],
+                    call.data.get("environment", {})
+                )
 
     hass.services.async_register(DOMAIN, "reboot", async_reboot)
+    hass.services.async_register(DOMAIN, "exec", async_exec)
 
     return True
+
 
 class OpenWrtEntity(CoordinatorEntity):
     def __init__(self, device, device_id: str):

@@ -1,5 +1,24 @@
 reboot:
-  name: Reboot OpenWrt device
+  name: Reboot device
   target:
     device:
       integration: openwrt
+exec:
+  name: Execute command
+  target:
+    device:
+      integration: openwrt
+  fields:
+    command:
+      name: Command
+      description: Command to execute
+      required: true
+      example: "wifi reload"
+      selector:
+        text: {}
+    environment:
+      name: Environment variables
+      description: Map of Environment variables names with values
+      required: false
+      selector:
+        object: {}
