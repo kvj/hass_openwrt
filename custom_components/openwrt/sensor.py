@@ -11,6 +11,7 @@ from .constants import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -28,7 +29,8 @@ async def async_setup_entry(
         wireless.append(sensor)
         entities.append(sensor)
     if len(wireless) > 0:
-        entities.append(WirelessTotalClientsSensor(device, device_id, wireless))
+        entities.append(WirelessTotalClientsSensor(
+            device, device_id, wireless))
     for net_id in device.coordinator.data['mesh']:
         entities.append(
             MeshSignalSensor(device, device_id, net_id)
@@ -43,6 +45,7 @@ async def async_setup_entry(
     async_add_entities(entities)
     return True
 
+
 class OpenWrtSensor(OpenWrtEntity, SensorEntity):
     def __init__(self, coordinator, device: str):
         super().__init__(coordinator, device)
@@ -51,9 +54,10 @@ class OpenWrtSensor(OpenWrtEntity, SensorEntity):
     def state_class(self):
         return 'measurement'
 
+
 class WirelessClientsSensor(OpenWrtSensor):
 
-    def __init__(self, device, device_id: str, interface: string):
+    def __init__(self, device, device_id: str, interface: str):
         super().__init__(device, device_id)
         self._interface_id = interface
 
@@ -72,6 +76,15 @@ class WirelessClientsSensor(OpenWrtSensor):
     @property
     def icon(self):
         return 'mdi:wifi-off' if self.state == 0 else 'mdi:wifi'
+
+    @property
+    def extra_state_attributes(self):
+        result = dict()
+        data = self.data['wireless'][self._interface_id]
+        for key, value in data.get("macs", {}).items():
+            signal = value.get("signal", 0)
+            result[key] = f"{signal} dBm"
+        return result
 
 
 class MeshSignalSensor(OpenWrtSensor):
@@ -102,14 +115,16 @@ class MeshSignalSensor(OpenWrtSensor):
         value = self.data['mesh'][self._interface_id]['signal']
         levels = [-50, -60, -67, -70, -80]
         for idx, level in enumerate(levels):
-            if value >=level:
+            if value >= level:
                 return idx
         return len(levels)
 
     @property
     def icon(self):
-        icons = ['mdi:network-strength-4', 'mdi:network-strength-3', 'mdi:network-strength-2', 'mdi:network-strength-1', 'mdi:network-strength-outline', 'mdi:network-strength-off-outline']
+        icons = ['mdi:network-strength-4', 'mdi:network-strength-3', 'mdi:network-strength-2',
+                 'mdi:network-strength-1', 'mdi:network-strength-outline', 'mdi:network-strength-off-outline']
         return icons[self.signal_strength]
+
 
 class MeshPeersSensor(OpenWrtSensor):
 
@@ -133,6 +148,16 @@ class MeshPeersSensor(OpenWrtSensor):
     @property
     def icon(self):
         return 'mdi:server-network' if self.state > 0 else 'mdi:server-network-off'
+
+    @property
+    def extra_state_attributes(self):
+        result = dict()
+        data = self.data["mesh"][self._interface_id]
+        for key, value in data.get("peers", {}).items():
+            signal = value.get("signal", 0)
+            result[key] = f"{signal} dBm"
+        return result
+
 
 class WirelessTotalClientsSensor(OpenWrtSensor):
 
@@ -159,6 +184,7 @@ class WirelessTotalClientsSensor(OpenWrtSensor):
     def icon(self):
         return 'mdi:wifi-off' if self.state == 0 else 'mdi:wifi'
 
+
 class Mwan3OnlineSensor(OpenWrtSensor):
 
     def __init__(self, device, device_id: str, interface: str):
@@ -176,10 +202,10 @@ class Mwan3OnlineSensor(OpenWrtSensor):
     @property
     def state(self):
         data = self.data["mwan3"][self._interface_id]
-        value = data["online_sec"] / data["uptime_sec"] * 100 if data["uptime_sec"] else 100
+        value = data["online_sec"] / data["uptime_sec"] * \
+            100 if data["uptime_sec"] else 100
         return f"{round(value, 1)}%"
 
     @property
     def icon(self):
         return "mdi:router-network"
-

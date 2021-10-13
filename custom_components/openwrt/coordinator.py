@@ -108,7 +108,9 @@ class DeviceCoordinator:
             'get_clients',
             dict()
         )
-        macs = list(map(lambda x: x.lower(), response['clients'].keys()))
+        macs = dict()
+        for key, value in response['clients'].items():
+            macs[key] = dict(signal=value.get("signal"))
         response = await self._ubus.api_call(
             f"hostapd.{interface_id}",
             'wps_status',

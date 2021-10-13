@@ -9,6 +9,7 @@ _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT: int = 15
 
+
 class Ubus:
     def __init__(
         self,
@@ -29,9 +30,9 @@ class Ubus:
         self.rpc_id = 1
 
     async def api_call(
-        self, 
-        subsystem: str, 
-        method: str, 
+        self,
+        subsystem: str,
+        method: str,
         params: dict,
         rpc_method: str = "call"
     ) -> dict:
@@ -46,18 +47,18 @@ class Ubus:
     async def _login(self):
         result = await self._api_call(
             "call",
-            "session", 
-            "login", 
+            "session",
+            "login",
             dict(username=self.username, password=self.password),
             "00000000000000000000000000000000")
         _LOGGER.debug(f"Login result: {result}")
         self.session_id = result["ubus_rpc_session"]
 
     async def _api_call(
-        self, 
+        self,
         rpc_method: str,
-        subsystem: str, 
-        method: str, 
+        subsystem: str,
+        method: str,
         params: dict,
         session: str = None,
     ) -> dict:
@@ -81,9 +82,9 @@ class Ubus:
         try:
             def post():
                 return requests.post(
-                    self.url, 
-                    data=data, 
-                    timeout=self.timeout, 
+                    self.url,
+                    data=data,
+                    timeout=self.timeout,
                     verify=self.verify
                 )
             response = await self.executor_job(post)
@@ -107,17 +108,14 @@ class Ubus:
             if code == -32000:
                 raise NameError(message)
             raise ConnectionError(f"rpc error: {message}")
-        result  = json_response['result']
+        result = json_response['result']
         if rpc_method == "list":
             return result
         result_code = result[0]
         if result_code == 8:
-            raise ConnectionError(f"rpc error: not allowed")            
+            raise ConnectionError(f"rpc error: not allowed")
         if result_code == 6:
             raise PermissionError(f"rpc error: insufficient permissions")
-        if  result_code == 0:
+        if result_code == 0:
             return json_response['result'][1] if len(result) > 1 else {}
         raise ConnectionError(f"rpc error: {result[0]}")
-    
-
-
