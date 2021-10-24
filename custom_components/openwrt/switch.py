@@ -9,6 +9,7 @@ from .constants import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -18,11 +19,13 @@ async def async_setup_entry(
     data = entry.as_dict()
     device = hass.data[DOMAIN]['devices'][entry.entry_id]
     device_id = data['data']['id']
-    for net_id in device.coordinator.data['wireless']:
-        sensor = WirelessWpsSwitch(device, device_id, net_id)
-        entities.append(sensor)
+    for net_id, info in device.coordinator.data['wireless'].items():
+        if "wps" in info:
+            sensor = WirelessWpsSwitch(device, device_id, net_id)
+            entities.append(sensor)
     async_add_entities(entities)
     return True
+
 
 class WirelessWpsSwitch(OpenWrtEntity, SwitchEntity):
     def __init__(self, device, device_id, interface: str):
@@ -52,4 +55,3 @@ class WirelessWpsSwitch(OpenWrtEntity, SwitchEntity):
     @property
     def icon(self):
         return "mdi:security"
-        

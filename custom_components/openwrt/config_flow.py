@@ -15,7 +15,9 @@ STEP_USER_DATA_SCHEMA = vol.Schema({
     vol.Required('https', default=False): cv.boolean,
     vol.Optional('port', default=0): cv.positive_int,
     vol.Optional('path', default="/ubus"): cv.string,
+    vol.Required('wps', default=False): cv.boolean,
 })
+
 
 class OpenWrtConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 

@@ -83,7 +83,7 @@ class WirelessClientsSensor(OpenWrtSensor):
         data = self.data['wireless'][self._interface_id]
         for key, value in data.get("macs", {}).items():
             signal = value.get("signal", 0)
-            result[key] = f"{signal} dBm"
+            result[key.upper()] = f"{signal} dBm"
         return result
 
 
@@ -155,7 +155,7 @@ class MeshPeersSensor(OpenWrtSensor):
         data = self.data["mesh"][self._interface_id]
         for key, value in data.get("peers", {}).items():
             signal = value.get("signal", 0)
-            result[key] = f"{signal} dBm"
+            result[key.upper()] = f"{signal} dBm"
         return result
 
 

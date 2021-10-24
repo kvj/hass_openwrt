@@ -21,6 +21,7 @@ class DeviceCoordinator:
         self._all_devices = all_devices
         self._id = config["id"]
         self._apis = None
+        self._wps = config.get("wps", False)
 
         self._coordinator = DataUpdateCoordinator(
             hass,
@@ -111,16 +112,22 @@ class DeviceCoordinator:
         macs = dict()
         for key, value in response['clients'].items():
             macs[key] = dict(signal=value.get("signal"))
-        response = await self._ubus.api_call(
-            f"hostapd.{interface_id}",
-            'wps_status',
-            dict()
-        )
-        return dict(
+        result = dict(
             clients=len(macs),
             macs=macs,
-            wps=response["pbc_status"] == "Active"
         )
+        try:
+            if self._wps:
+                response = await self._ubus.api_call(
+                    f"hostapd.{interface_id}",
+                    'wps_status',
+                    dict()
+                )
+                result["wps"] = response["pbc_status"] == "Active"
+        except ConnectionError as err:
+            _LOGGER.warning(
+                f"Interface [{interface_id}] doesn't support WPS: {err}")
+        return result
 
     async def set_wps(self, interface_id: str, enable: bool):
         await self._ubus.api_call(

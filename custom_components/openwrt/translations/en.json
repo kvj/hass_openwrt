@@ -11,7 +11,8 @@
           "password": "Password",
           "https": "Use HTTPS",
           "port": "Custom port ('0' to use default one)",
-          "path": "Ubus endpoint URI path"
+          "path": "Ubus endpoint URI path",
+          "wps": "WPS support"
         }
       }
     }
