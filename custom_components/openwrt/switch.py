@@ -55,3 +55,7 @@ class WirelessWpsSwitch(OpenWrtEntity, SwitchEntity):
     @property
     def icon(self):
         return "mdi:security"
+
+    @property
+    def entity_category(self):
+        return "config"

@@ -86,6 +86,10 @@ class WirelessClientsSensor(OpenWrtSensor):
             result[key.upper()] = f"{signal} dBm"
         return result
 
+    @property
+    def entity_category(self):
+        return "diagnostic"
+
 
 class MeshSignalSensor(OpenWrtSensor):
 
@@ -125,6 +129,10 @@ class MeshSignalSensor(OpenWrtSensor):
                  'mdi:network-strength-1', 'mdi:network-strength-outline', 'mdi:network-strength-off-outline']
         return icons[self.signal_strength]
 
+    @property
+    def entity_category(self):
+        return "diagnostic"
+
 
 class MeshPeersSensor(OpenWrtSensor):
 
@@ -157,6 +165,10 @@ class MeshPeersSensor(OpenWrtSensor):
             signal = value.get("signal", 0)
             result[key.upper()] = f"{signal} dBm"
         return result
+
+    @property
+    def entity_category(self):
+        return "diagnostic"
 
 
 class WirelessTotalClientsSensor(OpenWrtSensor):
@@ -209,3 +221,7 @@ class Mwan3OnlineSensor(OpenWrtSensor):
     @property
     def icon(self):
         return "mdi:router-network"
+
+    @property
+    def entity_category(self):
+        return "diagnostic"
