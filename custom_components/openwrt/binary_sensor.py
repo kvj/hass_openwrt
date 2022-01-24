@@ -53,6 +53,10 @@ class Mwan3OnlineBinarySensor(OpenWrtEntity, BinarySensorEntity):
         self._interface_id = interface
 
     @property
+    def available(self):
+        return self._interface_id in self.data["mwan3"]
+
+    @property
     def unique_id(self):
         return "%s.%s.mwan3_online" % (super().unique_id, self._interface_id)
 
@@ -62,8 +66,8 @@ class Mwan3OnlineBinarySensor(OpenWrtEntity, BinarySensorEntity):
 
     @property
     def is_on(self):
-        data = self.data["mwan3"][self._interface_id]
-        return data["online"]
+        data = self.data["mwan3"].get(self._interface_id, {})
+        return data.get("online", False)
 
     @property
     def device_class(self):

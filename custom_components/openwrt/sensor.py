@@ -204,6 +204,10 @@ class Mwan3OnlineSensor(OpenWrtSensor):
         self._interface_id = interface
 
     @property
+    def available(self):
+        return self._interface_id in self.data["mwan3"]
+
+    @property
     def unique_id(self):
         return "%s.%s.mwan3_online_ratio" % (super().unique_id, self._interface_id)
 
@@ -213,9 +217,9 @@ class Mwan3OnlineSensor(OpenWrtSensor):
 
     @property
     def state(self):
-        data = self.data["mwan3"][self._interface_id]
-        value = data["online_sec"] / data["uptime_sec"] * \
-            100 if data["uptime_sec"] else 100
+        data = self.data["mwan3"].get(self._interface_id, {})
+        value = data.get("online_sec") / data.data("uptime_sec") * \
+            100 if data.get("uptime_sec") else 100
         return f"{round(value, 1)}%"
 
     @property
