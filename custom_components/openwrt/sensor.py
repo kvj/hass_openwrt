@@ -218,7 +218,7 @@ class Mwan3OnlineSensor(OpenWrtSensor):
     @property
     def state(self):
         data = self.data["mwan3"].get(self._interface_id, {})
-        value = data.get("online_sec") / data.data("uptime_sec") * \
+        value = data.get("online_sec") / data.get("uptime_sec") * \
             100 if data.get("uptime_sec") else 100
         return f"{round(value, 1)}%"
 
