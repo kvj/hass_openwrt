@@ -3,6 +3,8 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
+
 
 import logging
 
@@ -88,7 +90,7 @@ class WirelessClientsSensor(OpenWrtSensor):
 
     @property
     def entity_category(self):
-        return "diagnostic"
+        return EntityCategory.DIAGNOSTIC
 
 
 class MeshSignalSensor(OpenWrtSensor):
@@ -131,7 +133,7 @@ class MeshSignalSensor(OpenWrtSensor):
 
     @property
     def entity_category(self):
-        return "diagnostic"
+        return EntityCategory.DIAGNOSTIC
 
 
 class MeshPeersSensor(OpenWrtSensor):
@@ -168,7 +170,7 @@ class MeshPeersSensor(OpenWrtSensor):
 
     @property
     def entity_category(self):
-        return "diagnostic"
+        return EntityCategory.DIAGNOSTIC
 
 
 class WirelessTotalClientsSensor(OpenWrtSensor):
@@ -228,4 +230,4 @@ class Mwan3OnlineSensor(OpenWrtSensor):
 
     @property
     def entity_category(self):
-        return "diagnostic"
+        return EntityCategory.DIAGNOSTIC

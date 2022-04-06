@@ -1,6 +1,7 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 
 import logging
 
@@ -58,4 +59,4 @@ class WirelessWpsSwitch(OpenWrtEntity, SwitchEntity):
 
     @property
     def entity_category(self):
-        return "config"
+        return EntityCategory.CONFIG
