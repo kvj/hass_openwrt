@@ -10,9 +10,12 @@
           "username": "Username with access to the Ubus",
           "password": "Password",
           "https": "Use HTTPS",
-          "port": "Custom port ('0' to use default one)",
+          "port": "Custom port ('0' to use the default one)",
           "path": "Ubus endpoint URI path",
-          "wps": "WPS support"
+          "wps": "WPS support",
+          "wan_devices": "WAN device names (comma-separated)",
+          "wifi_devices": "Wi-Fi device names (comma-separated)",
+          "mesh_devices": "Mesh device names (comma-separated)"
         }
       }
     }

@@ -44,6 +44,13 @@ async def async_setup_entry(
         entities.append(
             Mwan3OnlineSensor(device, device_id, net_id)
         )
+    for net_id in device.coordinator.data["wan"]:
+        entities.append(
+            WanRxTxSensor(device, device_id, net_id, "rx")
+        )
+        entities.append(
+            WanRxTxSensor(device, device_id, net_id, "tx")
+        )
     async_add_entities(entities)
     return True
 
@@ -204,6 +211,9 @@ class Mwan3OnlineSensor(OpenWrtSensor):
     def __init__(self, device, device_id: str, interface: str):
         super().__init__(device, device_id)
         self._interface_id = interface
+        self._attr_native_unit_of_measurement = "%"
+        self._attr_icon = "mdi:router-network"
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
     def available(self):
@@ -218,16 +228,47 @@ class Mwan3OnlineSensor(OpenWrtSensor):
         return f"{super().name} Mwan3 [{self._interface_id}] online ratio"
 
     @property
-    def state(self):
+    def native_value(self):
         data = self.data["mwan3"].get(self._interface_id, {})
         value = data.get("online_sec") / data.get("uptime_sec") * \
             100 if data.get("uptime_sec") else 100
-        return f"{round(value, 1)}%"
+        return round(value, 1)
+
+
+class WanRxTxSensor(OpenWrtSensor):
+
+    def __init__(self, device, device_id: str, interface: str, code: str):
+        super().__init__(device, device_id)
+        self._interface = interface
+        self._code = code
+        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._attr_icon = "mdi:download-network" if code == "rx" else "mdi:upload-network"
+        self._attr_native_unit_of_measurement = "bytes"
+
+    @property 
+    def _data(self):
+        return self.data["wan"].get(self._interface) 
 
     @property
-    def icon(self):
-        return "mdi:router-network"
+    def available(self):
+        return self._interface in self.data["wan"] and self._data.get("up")
 
     @property
-    def entity_category(self):
-        return EntityCategory.DIAGNOSTIC
+    def unique_id(self):
+        return "%s.%s.wan_%s_bytes" % (super().unique_id, self._interface, self._code)
+
+    @property
+    def name(self):
+        return f"{super().name} Wan [{self._interface}] {self._code.capitalize()} bytes"
+
+    @property
+    def native_value(self):
+        return self._data.get(f"{self._code}_bytes")
+
+    @property
+    def extra_state_attributes(self):
+        return dict(mac=self._data.get("macaddr"), speed=self._data.get("speed"))
+
+    @property
+    def state_class(self):
+        return "total_increasing"

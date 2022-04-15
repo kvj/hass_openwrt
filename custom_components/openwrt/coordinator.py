@@ -1,3 +1,4 @@
+from unittest import result
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
@@ -35,10 +36,17 @@ class DeviceCoordinator:
     def coordinator(self) -> DataUpdateCoordinator:
         return self._coordinator
 
+    def _configured_devices(self, config_name):
+        value = self._config.get(config_name, "")
+        if value == "":
+            return []
+        return list([x.strip() for x in value.split(",")])
+
     async def discover_wireless(self) -> dict:
         result = dict(ap=[], mesh=[])
         if not self.is_api_supported("network.wireless"):
             return result
+        wifi_devices = self._configured_devices("wifi_devices")
         try:
             response = await self._ubus.api_call('network.wireless', 'status', {})
             for radio, item in response.items():
@@ -46,6 +54,8 @@ class DeviceCoordinator:
                     conf = dict(ifname=iface['ifname'],
                                 network=iface['config']['network'][0])
                     if iface['config']['mode'] == 'ap':
+                        if len(wifi_devices) and iface['ifname'] not in wifi_devices:
+                            continue
                         result['ap'].append(conf)
                     if iface['config']['mode'] == 'mesh':
                         conf['mesh_id'] = iface['config']['mesh_id']
@@ -65,11 +75,14 @@ class DeviceCoordinator:
         return result
 
     async def update_mesh(self, configs) -> dict:
+        mesh_devices = self._configured_devices("mesh_devices")
         result = dict()
         if not self.is_api_supported("iwinfo"):
             return result
         try:
             for conf in configs:
+                if len(mesh_devices) and conf['ifname'] not in mesh_devices:
+                    continue
                 info = await self._ubus.api_call(
                     'iwinfo',
                     'info',
@@ -195,6 +208,26 @@ class DeviceCoordinator:
             }
         return result
 
+    async def update_wan_info(self):
+        result = dict()
+        devices = self._configured_devices("wan_devices")
+        for device_id in devices:
+            response = await self._ubus.api_call(
+                "network.device",
+                "status",
+                dict(name=device_id)
+            )
+            stats = response.get("statistics", {})
+            _LOGGER.debug("WAN: %s", response)
+            result[device_id] = {
+                "up": response.get("up", False),
+                "rx_bytes": stats.get("rx_bytes", 0),
+                "tx_bytes": stats.get("tx_bytes", 0),
+                "speed": response.get("speed"),
+                "mac": response.get("macaddr"),
+            }
+        return result
+
     async def load_ubus(self):
         return await self._ubus.api_call("*", None, None, "list")
 
@@ -214,6 +247,7 @@ class DeviceCoordinator:
                 result['wireless'] = await self.update_ap(wireless_config['ap'])
                 result['mesh'] = await self.update_mesh(wireless_config['mesh'])
                 result["mwan3"] = await self.discover_mwan3()
+                result["wan"] = await self.update_wan_info()
                 _LOGGER.debug(f"Full update [{self._id}]: {result}")
                 return result
             except PermissionError as err:
