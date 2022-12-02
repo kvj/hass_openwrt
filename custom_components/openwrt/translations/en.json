@@ -10,6 +10,7 @@
           "username": "Username with access to the Ubus",
           "password": "Password",
           "https": "Use HTTPS",
+          "verify_cert": "Verify HTTPS certificate",
           "port": "Custom port ('0' to use the default one)",
           "path": "Ubus endpoint URI path",
           "wps": "WPS support",
@@ -21,3 +22,4 @@
     }
   }
 }
+  

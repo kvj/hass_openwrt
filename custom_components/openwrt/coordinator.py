@@ -270,7 +270,8 @@ def new_coordinator(hass, config: dict, all_devices: dict) -> DeviceCoordinator:
         hass.async_add_executor_job,
         url,
         config["username"],
-        config.get("password", "")
+        config.get("password", ""),
+        verify=config.get("verify_cert", True)
     )
     device = DeviceCoordinator(hass, config, connection, all_devices)
     return device

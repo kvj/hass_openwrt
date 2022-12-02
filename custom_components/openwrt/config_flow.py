@@ -13,6 +13,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema({
     vol.Required('username'): cv.string,
     vol.Optional('password'): cv.string,
     vol.Required('https', default=False): cv.boolean,
+    vol.Required('verify_cert', default=False): cv.boolean,
     vol.Optional('port', default=0): cv.positive_int,
     vol.Optional('path', default="/ubus"): cv.string,
     vol.Required('wps', default=False): cv.boolean,
