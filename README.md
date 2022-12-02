@@ -6,6 +6,7 @@
   * Number of connected mesh peers
   * Signal strength of mesh links
   * `mwan3` interface online ratio
+  * WAN interfaces Rx&Tx bytes counters (if configured)
 * Switches:
   * Control WPS status
 * Binary sensors:
@@ -22,7 +23,7 @@
     * To make it right, please refer to the `Ubus configuration` section below
 
 * Home Assistant:
-  * Checkout/clone contents to the `~/.homeassistant/custom_components/openwrt/` folder
+  * Add this repo as a custom integration using HACS
   * Restart server
   * Go to `Integrations` and add a new `OpenWrt` integration
 
@@ -35,6 +36,7 @@
     "read": {
       "ubus": {
         "network.wireless": ["status"],
+        "network.device": ["status"],
         "iwinfo": ["info", "assoclist"],
         "hostapd.*": ["get_clients", "wps_status"],
         "system": ["board"],
