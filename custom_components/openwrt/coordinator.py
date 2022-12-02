@@ -50,6 +50,8 @@ class DeviceCoordinator:
         try:
             response = await self._ubus.api_call('network.wireless', 'status', {})
             for radio, item in response.items():
+                if item.get('disabled', False):
+                    continue
                 for iface in item['interfaces']:
                     conf = dict(ifname=iface['ifname'],
                                 network=iface['config']['network'][0])
