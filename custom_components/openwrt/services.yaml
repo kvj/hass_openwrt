@@ -22,3 +22,9 @@ exec:
       required: false
       selector:
         object: {}
+    extra:
+      name: Extra event fields
+      description: Arbitrary object added to the execute result event
+      required: false
+      selector:
+        object: {}

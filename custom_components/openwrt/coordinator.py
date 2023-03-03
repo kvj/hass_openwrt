@@ -160,7 +160,7 @@ class DeviceCoordinator:
             dict()
         )
 
-    async def do_file_exec(self, command: str, params, env: dict):
+    async def do_file_exec(self, command: str, params, env: dict, extra: dict):
         _LOGGER.debug(
             f"Executing command: {self._id}: {command} with {params} env={env}")
         result = await self._ubus.api_call(
@@ -169,6 +169,17 @@ class DeviceCoordinator:
             dict(command=command, params=params, env=env)
         )
         _LOGGER.debug(f"Execute result: {self._id}: {result}")
+        self._coordinator.hass.bus.async_fire(
+            "openwrt_exec_result", 
+            {
+                "address": self._config.get("address"),
+                "id": self._config.get("id"),
+                "command": command, 
+                "code": result.get("code", 1), 
+                "stdout": result.get("stdout", ""),
+                **extra,
+            },
+        )
 
     async def update_ap(self, configs) -> dict:
         result = dict()

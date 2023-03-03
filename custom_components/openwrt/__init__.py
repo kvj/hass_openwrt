@@ -59,7 +59,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 await device.do_file_exec(
                     parts[0],
                     parts[1:],
-                    call.data.get("environment", {})
+                    call.data.get("environment", {}),
+                    call.data.get("extra", {})
                 )
 
     hass.services.async_register(DOMAIN, "reboot", async_reboot)
