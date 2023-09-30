@@ -63,8 +63,19 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                     call.data.get("extra", {})
                 )
 
+    async def async_init(call):
+        parts = call.data["name"].split(" ")
+        for entry_id in await service.async_extract_config_entry_ids(hass, call):
+            device = hass.data[DOMAIN]["devices"][entry_id]
+            if device.is_api_supported("rc"):
+                await device.do_rc_init(
+                    parts[0],
+                    call.data.get("action", {})
+                )
+
     hass.services.async_register(DOMAIN, "reboot", async_reboot)
     hass.services.async_register(DOMAIN, "exec", async_exec)
+    hass.services.async_register(DOMAIN, "init", async_init)
 
     return True
 

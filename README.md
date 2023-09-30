@@ -1,6 +1,7 @@
-## Home Assistant integration with OpenWrt devices
+# Home Assistant integration with OpenWrt devices
 
-### Features:
+## Features
+
 * Sensors:
   * Wireless clients counters
   * Number of connected mesh peers
@@ -13,13 +14,15 @@
   * `mwan3` connectivity status
 * Services:
   * Reboot device: `openwrt.reboot`
-  * Execute arbitrary command: `openwrt.exec` (see the configuration below) 
+  * Execute arbitrary command: `openwrt.exec` (see the configuration below)
+  * Manage services using command-line: `openwrt.init` (see the configuration below)
 
 ### Installing
+
 * OpeWrt device(s):
   * Make sure that `uhttpd uhttpd-mod-ubus rpcd` packages are installed (if you use custom images)
     * If you use mesh networks, install `rpcd-mod-iwinfo` package
-  * Make sure that `ubus` is available via http using the manual: https://openwrt.org/docs/techref/ubus
+  * Make sure that `ubus` is available via http using the manual: <https://openwrt.org/docs/techref/ubus>
     * To make it right, please refer to the `Ubus configuration` section below
 
 * Home Assistant:
@@ -28,7 +31,9 @@
   * Go to `Integrations` and add a new `OpenWrt` integration
 
 ### Ubus configuration
+
 * Create new file `/usr/share/rpcd/acl.d/hass.json`:
+
 ```json
 {
   "hass": {
@@ -53,12 +58,14 @@
 }
 
 ```
+
 * Add new system user `hass` (or do it in any other way that you prefer):
   * Add line to `/etc/passwd`: `hass:x:10001:10001:hass:/var:/bin/false`
   * Add line to `/etc/shadow`: `hass:x:0:0:99999:7:::`
   * Change password: `passwd hass`
 * Edit `/etc/config/rpcd` and add:
-```
+
+```json
 config login
         option username 'hass'
         option password '$p$hass'
@@ -66,11 +73,13 @@ config login
         list read unauthenticated
         list write hass
 ```
+
 * Restart rpcd: `/etc/init.d/rpcd restart`
 
 ### Executing command
 
 In order to allow ubus/rpcd execute a command remotely, the command should be added to the permissions ACL file above. The extra configuration could look like below (gives permission to execute `uptime` command):
+
 ```json
 {
   "hass": {
@@ -88,7 +97,28 @@ In order to allow ubus/rpcd execute a command remotely, the command should be ad
 }
 ```
 
-### Screenshots:
+### Manage services using command-line
+
+In order to allow ubus/rpcd execute a command remotely, the command should be added to the permissions ACL file above. The extra configuration could look like below (gives permission to manage `presence-detector` service. Start, stop, restart, enable and disable system services.):
+
+```json
+{
+  "hass": {
+    "write": {
+      "ubus": {
+        /* ... */
+        "rc": ["init"]
+      },
+      "rc": {
+        /* ... */
+        "/etc/init.d/presence-detector": ["init"]
+      }
+    },
+  }
+}
+```
+
+### Screenshots
 
 <img width="1050" alt="Screenshot 2021-10-11 at 14 07 34" src="https://user-images.githubusercontent.com/159124/136787603-04d3f48f-5726-45ab-94f1-c3c3b8b39c53.png">
 
