@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ## v0.0.2
 
-- Add add service management using command
+- Add service management using command
 - Add service translations to English language
 - Added French translation
 
