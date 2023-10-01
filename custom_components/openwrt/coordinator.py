@@ -174,10 +174,30 @@ class DeviceCoordinator:
             {
                 "address": self._config.get("address"),
                 "id": self._config.get("id"),
-                "command": command, 
-                "code": result.get("code", 1), 
+                "command": command,
+                "code": result.get("code", 1),
                 "stdout": result.get("stdout", ""),
                 **extra,
+            },
+        )
+
+    async def do_rc_init(self, name: str, action: str):
+        _LOGGER.debug(
+            f"Executing name: {self._id}: {name} with {action}")
+        result = await self._ubus.api_call(
+            "rc",
+            "init",
+            dict(name=name, action=action)
+        )
+        _LOGGER.debug(f"Execute result: {self._id}: {result}")
+        self._coordinator.hass.bus.async_fire(
+            "openwrt_init_result", 
+            {
+                "address": self._config.get("address"),
+                "id": self._config.get("id"),
+                "name": name,
+                "code": result.get("code", 1),
+                "stdout": result.get("stdout", ""),
             },
         )
 

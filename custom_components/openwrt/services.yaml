@@ -28,3 +28,31 @@ exec:
       required: false
       selector:
         object: {}
+init:
+  name: Managing services
+  target:
+    device:
+      integration: openwrt
+  fields:
+    name:
+      name: Name
+      description: Service Name
+      required: true
+      example: "dnsmasq"
+      selector:
+        text: {}
+    action:
+      name: Action
+      description: Common actions supported by most services
+      required: true
+      example: "restart"
+      default: "restart"
+      selector:
+        select:
+          options:
+            - "start"
+            - "stop"
+            - "restart"
+            - "reload"
+            - "enable"
+            - "disable"

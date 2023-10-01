@@ -1,0 +1,60 @@
+{
+  "title": "OpenWrt",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nouveau périphérique OpenWrt",
+        "data": {
+          "id": "Nom de l'appareil (unique)",
+          "address": "Nom d'hôte ou adresse IP",
+          "username": "Nom d'utilisateur ayant accès à l'Ubus",
+          "password": "Mot de passe",
+          "https": "Utiliser HTTPS",
+          "verify_cert": "Vérifier le certificat HTTPS",
+          "port": "Port personnalisé ('0' pour utiliser celui par défaut)",
+          "path": "Chemin URL du point de terminaison Ubus",
+          "wps": "Prise en charge WPS",
+          "wan_devices": "Noms des périphériques WAN (séparés par des virgules)",
+          "wifi_devices": "Noms des appareils Wi-Fi (séparés par des virgules)",
+          "mesh_devices": "Noms des périphériques Mesh (séparés par des virgules)"
+        }
+      }
+    }
+  },
+  "services": {
+    "reboot": {
+      "name": "redémarrer l'appareil"
+    },
+    "exec": {
+      "fields": {
+        "command": {
+          "name": "Commande",
+          "description": "Commande à exécuter",
+          "example": "recharger le Wi-Fi"
+        },
+        "environment": {
+          "name": "Variables d'environnement",
+          "description": "Carte des noms de variables d'environnement avec des valeurs"
+        },
+        "extra": {
+          "name": "Champs d'événement supplémentaires",
+          "description": "Objet arbitraire ajouté à l'événement du résultat d'exécution"
+        }
+      },
+      "name": "Exécuter une commande"
+    },
+    "init": {
+      "fields": {
+        "name": {
+          "name": "Nom",
+          "description": "Nom du service"
+        },
+        "action": {
+          "name": "Action",
+          "description": "Actions courantes prises en charge par la plupart des services"
+        }
+      },
+      "name": "Gestion des services"
+    }
+  }
+}
