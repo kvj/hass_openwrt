@@ -46,5 +46,13 @@ init:
       description: Common actions supported by most services
       required: true
       example: "restart"
+      default: "restart"
       selector:
-        text: {}
+        select:
+          options:
+            - "start"
+            - "stop"
+            - "restart"
+            - "reload"
+            - "enable"
+            - "disable"
