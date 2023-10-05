@@ -1,6 +1,7 @@
 # Home Assistant integration with OpenWrt devices
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-custom-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
+
 
 ## Features
 
@@ -21,7 +22,7 @@
 
 ### Installing
 
-* OpeWrt device(s):
+* OpenWrt device(s):
   * Make sure that `uhttpd uhttpd-mod-ubus rpcd` packages are installed (if you use custom images)
     * If you use mesh networks, install `rpcd-mod-iwinfo` package
   * Make sure that `ubus` is available via http using the manual: <https://openwrt.org/docs/techref/ubus>
@@ -36,10 +37,10 @@
 
 * Create new file `/usr/share/rpcd/acl.d/hass.json`:
 
-```json
+```jsonc
 {
   "hass": {
-    "description": "Home Assistant OpenWrt integraion permissions",
+    "description": "Home Assistant OpenWrt integration permissions",
     "read": {
       "ubus": {
         "network.wireless": ["status"],
@@ -82,7 +83,7 @@ config login
 
 In order to allow ubus/rpcd execute a command remotely, the command should be added to the permissions ACL file above. The extra configuration could look like below (gives permission to execute `uptime` command):
 
-```json
+```jsonc
 {
   "hass": {
     "write": {
@@ -103,7 +104,7 @@ In order to allow ubus/rpcd execute a command remotely, the command should be ad
 
 In order to allow ubus/rpcd execute a command remotely, the command should be added to the permissions ACL file above. The extra configuration could look like below (gives permission to manage `presence-detector` service. Start, stop, restart, enable and disable system services.):
 
-```json
+```jsonc
 {
   "hass": {
     "write": {
