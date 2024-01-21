@@ -119,3 +119,6 @@ class Ubus:
         if result_code == 0:
             return json_response['result'][1] if len(result) > 1 else {}
         raise ConnectionError(f"rpc error: {result[0]}")
+    
+    async def api_list(self):
+        return await self.api_call("*", None, None, "list")
