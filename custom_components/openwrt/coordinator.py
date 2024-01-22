@@ -4,6 +4,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
+from homeassistant.util.json import json_loads
 
 from .ubus import Ubus
 from .constants import DOMAIN
@@ -180,6 +181,23 @@ class DeviceCoordinator:
                 **extra,
             },
         )
+        def process_output(data: str):
+            try:
+                json = json_loads(data)
+                if type(json) is list or type(json) is dict:
+                    return json
+            except:
+                pass
+            return data.strip().split("\n")
+        return {
+            "code": result.get("code", 1),
+            "stdout": process_output(result.get("stdout", "")),
+            "stderr": process_output(result.get("stderr", "")),
+        }
+
+    async def do_ubus_call(self, subsystem: str, method: str, params: dict):
+        _LOGGER.debug(f"do_ubus_call(): {subsystem} / {method}: {params}")
+        return await self._ubus.api_call(subsystem, method, params)
 
     async def do_rc_init(self, name: str, action: str):
         _LOGGER.debug(
@@ -262,7 +280,7 @@ class DeviceCoordinator:
         return result
 
     async def load_ubus(self):
-        return await self._ubus.api_call("*", None, None, "list")
+        return await self._ubus.api_list()
 
     def is_api_supported(self, name: str) -> bool:
         if self._apis and name in self._apis:
@@ -291,18 +309,21 @@ class DeviceCoordinator:
                 raise UpdateFailed(f"OpenWrt communication error: {err}")
         return async_update_data
 
-
-def new_coordinator(hass, config: dict, all_devices: dict) -> DeviceCoordinator:
-    _LOGGER.debug(f"new_coordinator: {config}")
+def new_ubus_client(hass, config: dict) -> Ubus:
+    _LOGGER.debug(f"new_ubus_client(): {config}")
     schema = "https" if config["https"] else "http"
     port = ":%d" % (config["port"]) if config["port"] > 0 else ''
     url = "%s://%s%s%s" % (schema, config["address"], port, config["path"])
-    connection = Ubus(
+    return Ubus(
         hass.async_add_executor_job,
         url,
         config["username"],
         config.get("password", ""),
         verify=config.get("verify_cert", True)
     )
+
+def new_coordinator(hass, config: dict, all_devices: dict) -> DeviceCoordinator:
+    _LOGGER.debug(f"new_coordinator: {config}, {all_devices}")
+    connection = new_ubus_client(hass, config)
     device = DeviceCoordinator(hass, config, connection, all_devices)
     return device

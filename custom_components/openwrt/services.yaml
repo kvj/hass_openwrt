@@ -16,6 +16,13 @@ exec:
       example: "wifi reload"
       selector:
         text: {}
+    arguments:
+      name: Command arguments
+      description: Arguments to append to the command (one per line)
+      required: false
+      selector:
+        text:
+          multiline: true
     environment:
       name: Environment variables
       description: Map of Environment variables names with values
@@ -56,3 +63,29 @@ init:
             - "reload"
             - "enable"
             - "disable"
+ubus:
+  name: Make arbitrary Ubus call
+  target:
+    device:
+      integration: openwrt
+  fields:
+    subsystem:
+      name: Ubus sub-system
+      description: Top-level Ubus sub-system 
+      required: true
+      example: "system"
+      selector:
+        text: {}
+    method:
+      name: Ubus method
+      description: Ubus method to call 
+      required: true
+      example: "board"
+      selector:
+        text: {}
+    parameters:
+      name: Call parameters
+      description: Ubus call paramteres
+      required: false
+      selector:
+        object: {}

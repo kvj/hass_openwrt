@@ -1,7 +1,7 @@
 from __future__ import annotations
 from .constants import DOMAIN, PLATFORMS
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, SupportsResponse
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import service
 from homeassistant.helpers.update_coordinator import (
@@ -53,15 +53,23 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def async_exec(call):
         parts = call.data["command"].split(" ")
-        for entry_id in await service.async_extract_config_entry_ids(hass, call):
-            device = hass.data[DOMAIN]["devices"][entry_id]
-            if device.is_api_supported("file"):
-                await device.do_file_exec(
-                    parts[0],
-                    parts[1:],
-                    call.data.get("environment", {}),
-                    call.data.get("extra", {})
-                )
+        ids = await service.async_extract_config_entry_ids(hass, call)
+        response = {}
+        for entry_id in ids:
+            if coordinator := hass.data[DOMAIN]["devices"].get(entry_id): 
+                if coordinator.is_api_supported("file"):
+                    args = parts[1:]
+                    if "arguments" in call.data:
+                        args = call.data["arguments"].strip().split("\n")
+                    response[entry_id] = await coordinator.do_file_exec(
+                        parts[0],
+                        args,
+                        call.data.get("environment", {}),
+                        call.data.get("extra", {})
+                    )
+        if len(ids) == 1:
+            return response.get(list(ids)[0])
+        return response
 
     async def async_init(call):
         parts = call.data["name"].split(" ")
@@ -73,9 +81,24 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                     call.data.get("action", {})
                 )
 
+    async def async_ubus(call):
+        response = {}
+        ids = await service.async_extract_config_entry_ids(hass, call)
+        for entry_id in ids:
+            if coordinator := hass.data[DOMAIN]["devices"].get(entry_id):
+                response[entry_id] = await coordinator.do_ubus_call(
+                    call.data.get("subsystem"),
+                    call.data.get("method"),
+                    call.data.get("parameters", {}),
+                )
+        if len(ids) == 1:
+            return response.get(list(ids)[0])
+        return response
+
     hass.services.async_register(DOMAIN, "reboot", async_reboot)
-    hass.services.async_register(DOMAIN, "exec", async_exec)
+    hass.services.async_register(DOMAIN, "exec", async_exec, supports_response=SupportsResponse.OPTIONAL)
     hass.services.async_register(DOMAIN, "init", async_init)
+    hass.services.async_register(DOMAIN, "ubus", async_ubus, supports_response=SupportsResponse.ONLY)
 
     return True
 
