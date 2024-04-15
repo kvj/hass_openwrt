@@ -4,7 +4,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
-
+from homeassistant.components.sensor import SensorDeviceClass
 
 import logging
 
@@ -243,7 +243,8 @@ class WanRxTxSensor(OpenWrtSensor):
         self._code = code
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
         self._attr_icon = "mdi:download-network" if code == "rx" else "mdi:upload-network"
-        self._attr_native_unit_of_measurement = "bytes"
+        self._attr_device_class = SensorDeviceClass.DATA_SIZE
+        self._attr_native_unit_of_measurement = "B"
 
     @property 
     def _data(self):
