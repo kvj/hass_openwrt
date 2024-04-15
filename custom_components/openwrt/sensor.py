@@ -267,7 +267,7 @@ class WanRxTxSensor(OpenWrtSensor):
 
     @property
     def extra_state_attributes(self):
-        return dict(mac=self._data.get("macaddr"), speed=self._data.get("speed"))
+        return dict(mac=self._data.get("mac"), speed=self._data.get("speed"))
 
     @property
     def state_class(self):
