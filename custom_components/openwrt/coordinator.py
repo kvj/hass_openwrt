@@ -167,7 +167,10 @@ class DeviceCoordinator:
         result = await self._ubus.api_call(
             "file",
             "exec",
-            dict(command=command, params=params, env=env)
+            if env !={}:
+                dict(command=command, params=params, env=env)
+            else:
+                dict(command=command, params=params)
         )
         _LOGGER.debug(f"Execute result: {self._id}: {result}")
         self._coordinator.hass.bus.async_fire(
