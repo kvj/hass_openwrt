@@ -74,6 +74,9 @@ class DeviceCoordinator:
         result = []
         for _, device in self._all_devices.items():
             data = device.coordinator.data
+            if not data or 'mesh' not in data or not data['mesh']:
+                _LOGGER.warning(f"Missing or invalid 'mesh' data for device: {device}")
+                continue
             for _, mesh in data['mesh'].items():
                 if mesh['id'] == mesh_id:
                     result.append(mesh['mac'])
