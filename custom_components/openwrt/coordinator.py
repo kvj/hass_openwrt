@@ -30,7 +30,7 @@ class DeviceCoordinator:
             _LOGGER,
             name='openwrt',
             update_method=self.make_async_update_data(),
-            update_interval=timedelta(seconds=30)
+            update_interval=timedelta(seconds=config.get("interval", 30))
         )
 
     @property
@@ -187,10 +187,7 @@ class DeviceCoordinator:
         result = await self._ubus.api_call(
             "file",
             "exec",
-            if env !={}:
-                dict(command=command, params=params, env=env)
-            else:
-                dict(command=command, params=params)
+            dict(command=command, params=params, env=env) if len(env) else dict(command=command, params=params)
         )
         _LOGGER.debug(f"Execute result: {self._id}: {result}")
         self._coordinator.hass.bus.async_fire(

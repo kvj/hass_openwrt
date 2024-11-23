@@ -13,6 +13,7 @@
           "verify_cert": "Vérifier le certificat HTTPS",
           "port": "Port personnalisé ('0' pour utiliser celui par défaut)",
           "path": "Chemin URL du point de terminaison Ubus",
+          "interval": "Data fetch interval in seconds",
           "wps": "Prise en charge WPS",
           "wan_devices": "Noms des périphériques WAN (séparés par des virgules)",
           "wifi_devices": "Noms des appareils Wi-Fi (séparés par des virgules)",

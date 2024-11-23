@@ -13,6 +13,7 @@
           "verify_cert": "Verify HTTPS certificate",
           "port": "Custom port ('0' to use the default one)",
           "path": "Ubus endpoint URI path",
+          "interval": "Data fetch interval in seconds",
           "wps": "WPS support",
           "wan_devices": "WAN device names (comma-separated)",
           "wifi_devices": "Wi-Fi device names (comma-separated)",

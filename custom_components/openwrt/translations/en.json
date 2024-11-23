@@ -13,6 +13,7 @@
           "verify_cert": "Verify HTTPS certificate",
           "port": "Custom port ('0' to use the default one)",
           "path": "Ubus endpoint URI path",
+          "interval": "Data fetch interval in seconds",
           "wps": "WPS support",
           "wan_devices": "WAN device names (comma-separated)",
           "wifi_devices": "Wi-Fi device names (comma-separated)",
@@ -20,41 +21,6 @@
         }
       }
     }
-  },
-  "services": {
-    "reboot": {
-      "name": "Reboot device"
-    },
-    "exec": {
-      "fields": {
-        "command": {
-          "name": "Command",
-          "description": "Command to execute",
-          "example": "wifi reload"
-        },
-        "environment": {
-          "name": "Environment variables",
-          "description": "Map of Environment variables names with values"
-        },
-        "extra": {
-          "name": "Extra event fields",
-          "description": "Arbitrary object added to the execute result event"
-        }
-      },
-      "name": "Execute command"
-    },
-    "init": {
-      "fields": {
-        "name": {
-          "name": "Name",
-          "description": "Service Name"
-        },
-        "action": {
-          "name": "Action",
-          "description": "Common actions supported by most services"
-        }
-      },
-      "name": "Managing services"
-    }
   }
 }
+  

@@ -17,6 +17,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema({
     vol.Required('verify_cert', default=False): cv.boolean,
     vol.Optional('port', default=0): cv.positive_int,
     vol.Optional('path', default="/ubus"): cv.string,
+    vol.Required('interval', default=30): cv.positive_int,
     vol.Required('wps', default=False): cv.boolean,
     vol.Optional('wan_devices'): cv.string,
     vol.Optional('wifi_devices'): cv.string,
