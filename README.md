@@ -15,6 +15,8 @@
   * Control WPS status
 * Binary sensors:
   * `mwan3` connectivity status
+* Device Tracker:
+  * Display states of connected devices, based on the [official HA integration](https://www.home-assistant.io/integrations/ubus/)
 * Services:
   * Reboot device: `openwrt.reboot`
   * Execute arbitrary command: `openwrt.exec` (see the configuration below)

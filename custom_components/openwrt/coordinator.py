@@ -43,6 +43,61 @@ class DeviceCoordinator:
             return []
         return list([x.strip() for x in value.split(",")])
 
+    async def discover_devices(self) -> dict:
+        result = dict()
+
+        if self.is_api_supported("network.device"):
+            try:
+                response = await self._ubus.api_call('network.device', 'status', {})
+                _LOGGER.debug(f"Device status response: {response}")
+                for device in response.get('devices', []):
+                    if 'mac' in device:
+                        result[device['mac']] = {
+                            'hostname': device.get('hostname', ''),
+                            'ip': device.get('ip', ''),
+                            'mac': device['mac'],
+                            'type': 'lan',
+                        }
+            except Exception as err:
+                _LOGGER.warning(f"Error discovering LAN devices: {err}")
+
+        if self.is_api_supported("network.wireless"):
+            try:
+                response = await self._ubus.api_call('network.wireless', 'status', {})
+                _LOGGER.debug(f"Wireless status response: {response}")
+                for radio, item in response.items():
+                    if item.get('disabled', False):
+                        continue
+                    for iface in item['interfaces']:
+                        if 'ifname' not in iface:
+                            continue
+                        for client in iface.get('clients', []):
+                            if 'mac' in client:
+                                result[client['mac']] = {
+                                    'hostname': client.get('hostname', ''),
+                                    'ip': client.get('ip', ''),
+                                    'mac': client['mac'],
+                                    'type': 'wifi',
+                                }
+            except Exception as err:
+                _LOGGER.warning(f"Error discovering WLAN devices: {err}")
+
+        if self.is_api_supported("mwan3"):
+            try:
+                response = await self._ubus.api_call('mwan3', 'status', {})
+                for iface in response.get('interfaces', {}).values():
+                    if iface.get("status") == "online":
+                        result[iface['mac']] = {
+                            'hostname': iface.get('hostname', ''),
+                            'ip': iface.get('ip', ''),
+                            'mac': iface['mac'],
+                            'type': 'wan',
+                        }
+            except Exception as err:
+                _LOGGER.warning(f"Error discovering WAN devices: {err}")
+
+        return result
+
     async def discover_wireless(self) -> dict:
         result = dict(ap=[], mesh=[])
         if not self.is_api_supported("network.wireless"):
@@ -74,6 +129,9 @@ class DeviceCoordinator:
         result = []
         for _, device in self._all_devices.items():
             data = device.coordinator.data
+            if not data or 'mesh' not in data or not data['mesh']:
+                _LOGGER.warning(f"Missing or invalid 'mesh' data for device: {device}")
+                continue
             for _, mesh in data['mesh'].items():
                 if mesh['id'] == mesh_id:
                     result.append(mesh['mac'])
@@ -330,6 +388,7 @@ class DeviceCoordinator:
                 result['mesh'] = await self.update_mesh(wireless_config['mesh'])
                 result["mwan3"] = await self.discover_mwan3()
                 result["wan"] = await self.update_wan_info()
+                devices = await self.discover_devices()
                 _LOGGER.debug(f"Full update [{self._id}]: {result}")
                 return result
             except PermissionError as err:
