@@ -55,6 +55,8 @@ class DeviceCoordinator:
                 if item.get('disabled', False):
                     continue
                 for iface in item['interfaces']:
+                    if 'ifname' not in iface:
+                        continue
                     conf = dict(ifname=iface['ifname'],
                                 network=iface['config']['network'][0])
                     if iface['config']['mode'] == 'ap':
