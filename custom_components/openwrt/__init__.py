@@ -2,20 +2,20 @@ from __future__ import annotations
 from .constants import DOMAIN, PLATFORMS
 
 from homeassistant.core import HomeAssistant, SupportsResponse
-from homeassistant.helpers.typing import ConfigType
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import service
+from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
 )
+import homeassistant.helpers.config_validation as cv
 
 import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
 import logging
 
 from .coordinator import new_coordinator
 
 _LOGGER = logging.getLogger(__name__)
-
 
 CONFIG_SCHEMA = vol.Schema({
     DOMAIN: vol.Schema({
@@ -28,19 +28,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     device = new_coordinator(hass, data, hass.data[DOMAIN]['devices'])
 
+    hass.data[DOMAIN]['devices'][entry.entry_id] = device # Backward compatibility
+    entry.runtime_data = device # New style
+
     await device.coordinator.async_config_entry_first_refresh()
-    hass.data[DOMAIN]['devices'][entry.entry_id] = device
-    for p in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, p)
-        )
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    for p in PLATFORMS:
-        await hass.config_entries.async_forward_entry_unload(entry, p)
+    await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    entry.runtime_data = None
     hass.data[DOMAIN]['devices'].pop(entry.entry_id)
+
     return True
 
 
