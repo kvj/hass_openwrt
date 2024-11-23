@@ -50,6 +50,7 @@ class DeviceCoordinator:
         wifi_devices = self._configured_devices("wifi_devices")
         try:
             response = await self._ubus.api_call('network.wireless', 'status', {})
+            _LOGGER.debug(f"Wireless status response: {response}")
             for radio, item in response.items():
                 if item.get('disabled', False):
                     continue
@@ -64,8 +65,7 @@ class DeviceCoordinator:
                         conf['mesh_id'] = iface['config']['mesh_id']
                         result['mesh'].append(conf)
         except NameError as err:
-            _LOGGER.warning(
-                f"Device [{self._id}] doesn't support wireless: {err}")
+            _LOGGER.warning(f"Device [{self._id}] doesn't support wireless: {err}")
         return result
 
     def find_mesh_peers(self, mesh_id: str):
@@ -113,37 +113,56 @@ class DeviceCoordinator:
                             noise=assoc.get("noise", 0)
                         )
                     except ConnectionError:
+                        _LOGGER.warning(f"Failed to get assoclist for {mac} on device {conf['ifname']}")
                         pass
         except ConnectionError as err:
-            _LOGGER.warning(
-                f"Device [{self._id}] doesn't support iwinfo: {err}")
+            _LOGGER.warning(f"Device [{self._id}] doesn't support iwinfo: {err}")
         return result
 
     async def update_hostapd_clients(self, interface_id: str) -> dict:
-        response = await self._ubus.api_call(
-            f"hostapd.{interface_id}",
-            'get_clients',
-            dict()
-        )
-        macs = dict()
-        for key, value in response['clients'].items():
-            macs[key] = dict(signal=value.get("signal"))
-        result = dict(
-            clients=len(macs),
-            macs=macs,
-        )
         try:
+            _LOGGER.debug(f"Updating hostapd clients for interface: {interface_id}")
+            response = await self._ubus.api_call(
+                f"hostapd.{interface_id}",
+                'get_clients',
+                dict()
+            )
+            _LOGGER.debug(f"Hostapd clients response for {interface_id}: {response}")
+
+            if 'clients' in response:
+                clients = response['clients']
+            else:
+                _LOGGER.warning(f"'clients' key not found in response for interface {interface_id}. Response: {response}")
+                clients = {}
+
+            macs = dict()
+            for key, value in clients.items():
+                macs[key] = dict(signal=value.get("signal"))
+
+            result = dict(
+                clients=len(macs),
+                macs=macs,
+            )
+
             if self._wps:
-                response = await self._ubus.api_call(
-                    f"hostapd.{interface_id}",
-                    'wps_status',
-                    dict()
-                )
-                result["wps"] = response["pbc_status"] == "Active"
-        except ConnectionError as err:
-            _LOGGER.warning(
-                f"Interface [{interface_id}] doesn't support WPS: {err}")
-        return result
+                try:
+                    response = await self._ubus.api_call(
+                        f"hostapd.{interface_id}",
+                        'wps_status',
+                        dict()
+                    )
+                    result["wps"] = response.get("pbc_status") == "Active"
+                except ConnectionError:
+                    _LOGGER.warning(f"Interface [{interface_id}] doesn't support WPS: {err}")
+
+            return result
+
+        except NameError as e:
+            _LOGGER.warning(f"Could not find object for interface {interface_id}: {e}")
+            return {}
+        except Exception as e:
+            _LOGGER.error(f"Error while updating hostapd clients for {interface_id}: {e}")
+            return {}
 
     async def set_wps(self, interface_id: str, enable: bool):
         await self._ubus.api_call(
@@ -162,8 +181,7 @@ class DeviceCoordinator:
         )
 
     async def do_file_exec(self, command: str, params, env: dict, extra: dict):
-        _LOGGER.debug(
-            f"Executing command: {self._id}: {command} with {params} env={env}")
+        _LOGGER.debug(f"Executing command: {self._id}: {command} with {params} env={env}")
         result = await self._ubus.api_call(
             "file",
             "exec",
@@ -174,7 +192,7 @@ class DeviceCoordinator:
         )
         _LOGGER.debug(f"Execute result: {self._id}: {result}")
         self._coordinator.hass.bus.async_fire(
-            "openwrt_exec_result", 
+            "openwrt_exec_result",
             {
                 "address": self._config.get("address"),
                 "id": self._config.get("id"),
@@ -184,14 +202,17 @@ class DeviceCoordinator:
                 **extra,
             },
         )
+
         def process_output(data: str):
             try:
                 json = json_loads(data)
-                if type(json) is list or type(json) is dict:
+                if isinstance(json, (list, dict)):
                     return json
-            except:
+            except Exception as e:
+                _LOGGER.debug(f"Failed to parse JSON output: {e}")
                 pass
             return data.strip().split("\n")
+
         return {
             "code": result.get("code", 1),
             "stdout": process_output(result.get("stdout", "")),
@@ -203,8 +224,7 @@ class DeviceCoordinator:
         return await self._ubus.api_call(subsystem, method, params)
 
     async def do_rc_init(self, name: str, action: str):
-        _LOGGER.debug(
-            f"Executing name: {self._id}: {name} with {action}")
+        _LOGGER.debug(f"Executing name: {self._id}: {name} with {action}")
         result = await self._ubus.api_call(
             "rc",
             "init",
@@ -212,7 +232,7 @@ class DeviceCoordinator:
         )
         _LOGGER.debug(f"Execute result: {self._id}: {result}")
         self._coordinator.hass.bus.async_fire(
-            "openwrt_init_result", 
+            "openwrt_init_result",
             {
                 "address": self._config.get("address"),
                 "id": self._config.get("id"),
@@ -225,7 +245,16 @@ class DeviceCoordinator:
     async def update_ap(self, configs) -> dict:
         result = dict()
         for item in configs:
-            result[item['ifname']] = await self.update_hostapd_clients(item['ifname'])
+            if 'ifname' in item:
+                ifname = item['ifname']
+                try:
+                    _LOGGER.debug(f"Updating AP for interface: {ifname}")
+                    result[ifname] = await self.update_hostapd_clients(ifname)
+                except Exception as e:
+                    _LOGGER.error(f"Error updating AP for {ifname}: {e}")
+                    continue  # Continue with the next item
+            else:
+                _LOGGER.warning(f"Missing 'ifname' in AP config: {item}")
         return result
 
     async def update_info(self) -> dict:
@@ -249,7 +278,7 @@ class DeviceCoordinator:
             "status",
             dict(section="interfaces")
         )
-        for key, iface in response["interfaces"].items():
+        for key, iface in response.get("interfaces", {}).items():
             if not iface.get("enabled", False):
                 continue
             result[key] = {
@@ -307,8 +336,7 @@ class DeviceCoordinator:
             except PermissionError as err:
                 raise ConfigEntryAuthFailed from err
             except Exception as err:
-                _LOGGER.exception(
-                    f"Device [{self._id}] async_update_data error: {err}")
+                _LOGGER.exception(f"Device [{self._id}] async_update_data error: {err}")
                 raise UpdateFailed(f"OpenWrt communication error: {err}")
         return async_update_data
 
