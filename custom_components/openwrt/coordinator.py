@@ -137,7 +137,6 @@ class DeviceCoordinator:
             if 'clients' in response:
                 clients = response['clients']
             else:
-                _LOGGER.warning(f"'clients' key not found in response for interface {interface_id}. Response: {response}")
                 clients = {}
 
             macs = dict()
