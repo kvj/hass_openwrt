@@ -45,9 +45,9 @@
       "ubus": {
         "network.wireless": ["status"],
         "network.device": ["status"],
-        "iwinfo": ["info", "assoclist"],
+        "iwinfo": ["info", "assoclist", "devices"],
         "hostapd.*": ["get_clients", "wps_status"],
-        "system": ["board"],
+        "system": ["board", "info"],
         "mwan3": ["status"]
       },
     },
