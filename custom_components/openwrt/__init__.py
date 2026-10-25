@@ -50,12 +50,12 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     hass.data[DOMAIN] = dict(devices={})
 
     async def async_reboot(call):
-        for entry_id in await service.async_extract_config_entry_ids(hass, call):
+        for entry_id in await service.async_extract_config_entry_ids(call):
             await hass.data[DOMAIN]["devices"][entry_id].do_reboot()
 
     async def async_exec(call):
         parts = call.data["command"].split(" ")
-        ids = await service.async_extract_config_entry_ids(hass, call)
+        ids = await service.async_extract_config_entry_ids(call)
         response = {}
         for entry_id in ids:
             if coordinator := hass.data[DOMAIN]["devices"].get(entry_id): 
@@ -75,7 +75,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def async_init(call):
         parts = call.data["name"].split(" ")
-        for entry_id in await service.async_extract_config_entry_ids(hass, call):
+        for entry_id in await service.async_extract_config_entry_ids(call):
             device = hass.data[DOMAIN]["devices"][entry_id]
             if device.is_api_supported("rc"):
                 await device.do_rc_init(
@@ -85,7 +85,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     async def async_ubus(call):
         response = {}
-        ids = await service.async_extract_config_entry_ids(hass, call)
+        ids = await service.async_extract_config_entry_ids(call)
         for entry_id in ids:
             if coordinator := hass.data[DOMAIN]["devices"].get(entry_id):
                 response[entry_id] = await coordinator.do_ubus_call(
