@@ -45,29 +45,40 @@ class DeviceCoordinator:
 
     async def discover_wireless(self) -> dict:
         result = dict(ap=[], mesh=[])
-        if not self.is_api_supported("network.wireless"):
-            return result
         wifi_devices = self._configured_devices("wifi_devices")
-        try:
-            response = await self._ubus.api_call('network.wireless', 'status', {})
-            _LOGGER.debug(f"Wireless status response: {response}")
-            for radio, item in response.items():
-                if item.get('disabled', False):
-                    continue
-                for iface in item['interfaces']:
-                    if 'ifname' not in iface:
+        
+        if self.is_api_supported("network.wireless"):
+            try:
+                response = await self._ubus.api_call('network.wireless', 'status', {})
+                _LOGGER.debug(f"Wireless status response: {response}")
+                for radio, item in response.items():
+                    if item.get('disabled', False):
                         continue
-                    conf = dict(ifname=iface['ifname'],
-                                network=iface['config']['network'][0])
-                    if iface['config']['mode'] == 'ap':
-                        if len(wifi_devices) and iface['ifname'] not in wifi_devices:
+                    for iface in item['interfaces']:
+                        if 'ifname' not in iface:
                             continue
-                        result['ap'].append(conf)
-                    if iface['config']['mode'] == 'mesh':
-                        conf['mesh_id'] = iface['config']['mesh_id']
-                        result['mesh'].append(conf)
-        except NameError as err:
-            _LOGGER.warning(f"Device [{self._id}] doesn't support wireless: {err}")
+                        conf = dict(ifname=iface['ifname'],
+                                    network=iface['config']['network'][0])
+                        if iface['config']['mode'] == 'ap':
+                            if len(wifi_devices) and iface['ifname'] not in wifi_devices:
+                                continue
+                            result['ap'].append(conf)
+                        if iface['config']['mode'] == 'mesh':
+                            conf['mesh_id'] = iface['config']['mesh_id']
+                            result['mesh'].append(conf)
+            except (NameError, ConnectionError) as err:
+                _LOGGER.warning(f"Device [{self._id}] doesn't support wireless: {err}")
+
+        # Fallback to discovering from registered ubus objects
+        if not result['ap'] and self._apis:
+            for api_name in self._apis:
+                if isinstance(api_name, str) and api_name.startswith("hostapd."):
+                    ifname = api_name.split(".", 1)[1]
+                    if len(wifi_devices) and ifname not in wifi_devices:
+                        continue
+                    if not any(ap['ifname'] == ifname for ap in result['ap']):
+                        result['ap'].append(dict(ifname=ifname, network='lan'))
+                        
         return result
 
     def find_mesh_peers(self, mesh_id: str):
@@ -275,42 +286,48 @@ class DeviceCoordinator:
         if not self.is_api_supported("mwan3"):
             return dict()
         result = dict()
-        response = await self._ubus.api_call(
-            "mwan3",
-            "status",
-            dict(section="interfaces")
-        )
-        for key, iface in response.get("interfaces", {}).items():
-            if not iface.get("enabled", False):
-                continue
-            result[key] = {
-                "offline_sec": iface.get("offline", 0),
-                "online_sec": iface.get("online", 0),
-                "uptime_sec": iface.get("uptime", 0),
-                "online": iface.get("status") == "online",
-                "status": iface.get("status"),
-                "up": iface.get("up")
-            }
+        try:
+            response = await self._ubus.api_call(
+                "mwan3",
+                "status",
+                dict(section="interfaces")
+            )
+            for key, iface in response.get("interfaces", {}).items():
+                if not iface.get("enabled", False):
+                    continue
+                result[key] = {
+                    "offline_sec": iface.get("offline", 0),
+                    "online_sec": iface.get("online", 0),
+                    "uptime_sec": iface.get("uptime", 0),
+                    "online": iface.get("status") == "online",
+                    "status": iface.get("status"),
+                    "up": iface.get("up")
+                }
+        except (NameError, ConnectionError) as err:
+            _LOGGER.warning(f"Device [{self._id}] doesn't support mwan3: {err}")
         return result
 
     async def update_wan_info(self):
         result = dict()
         devices = self._configured_devices("wan_devices")
         for device_id in devices:
-            response = await self._ubus.api_call(
-                "network.device",
-                "status",
-                dict(name=device_id)
-            )
-            stats = response.get("statistics", {})
-            _LOGGER.debug("WAN: %s", response)
-            result[device_id] = {
-                "up": response.get("up", False),
-                "rx_bytes": stats.get("rx_bytes", 0),
-                "tx_bytes": stats.get("tx_bytes", 0),
-                "speed": response.get("speed"),
-                "mac": response.get("macaddr"),
-            }
+            try:
+                response = await self._ubus.api_call(
+                    "network.device",
+                    "status",
+                    dict(name=device_id)
+                )
+                stats = response.get("statistics", {})
+                _LOGGER.debug("WAN: %s", response)
+                result[device_id] = {
+                    "up": response.get("up", False),
+                    "rx_bytes": stats.get("rx_bytes", 0),
+                    "tx_bytes": stats.get("tx_bytes", 0),
+                    "speed": response.get("speed"),
+                    "mac": response.get("macaddr"),
+                }
+            except (ConnectionError, NameError) as err:
+                _LOGGER.warning(f"Device [{self._id}] doesn't support wan_devices status: {err}")
         return result
 
     async def load_ubus(self):
